@@ -26,9 +26,17 @@ class GameObject {
                 this.width, this.height, 
             );
     }
+
+    update() { } // for override
 }
 
 class GetReadyMessage extends GameObject {
+    constructor(spriteX, spriteY, width, height, x, y){
+        super(spriteX, spriteY, width, height, x, y);
+    }
+}
+
+class GameOverMessage extends GameObject {
     constructor(spriteX, spriteY, width, height, x, y){
         super(spriteX, spriteY, width, height, x, y);
     }
@@ -45,8 +53,13 @@ class Background extends GameObject {
     }
 }
 
+class Coin extends GameObject {
+    constructor(spriteX, spriteY, width, height, x, y){
+        super(spriteX, spriteY, width, height, x, y);
+    }
+}
+
 class Pipes extends GameObject {
-    frameRate = 0;
     pipes = [];
 
     constructor(spriteX, spriteY, width, height, x, y){
@@ -93,8 +106,33 @@ class Pipes extends GameObject {
         });
     }
 
+    update(canvas, flappyBird, colisionCallback, pointCallback, frameRate) {
+        const passedAmountFrames = frameRate % 100 === 0;
+        if(passedAmountFrames) {
+            this.pipes.push({ x: canvas.width, y: (-150 * (Math.random() + 1)) });
+        }
+
+        this.pipes.forEach(doublePipe=> {
+            if(this.checkColision(flappyBird, doublePipe)) {
+                colisionCallback();
+                // break;
+            }
+
+            const passedAmountFrames = frameRate % 4 === 0;
+            if(this.checkGetPoint(flappyBird, doublePipe) && passedAmountFrames) {
+                pointCallback();
+                // console.log("ponto");
+            }
+
+            doublePipe.x = doublePipe.x -2;
+
+            if(doublePipe.x + this.width <= 0) 
+                this.pipes.shift();
+        });
+    }
+
     checkColision(flappyBird, pipes) {
-        if(flappyBird.x >= pipes.x) {
+        if((flappyBird.x + flappyBird.width - 3) >= pipes.x) {
             if(flappyBird.y <= pipes.topPipe.y)
                 return true;
 
@@ -110,34 +148,7 @@ class Pipes extends GameObject {
             return true;
 
         return false;
-    }
-
-    update(canvas, flappyBird, colisionCallback, pointCallback) {
-        this.frameRate += 1;
-
-        const passedAmountFrames = this.frameRate % 100 === 0;
-        if(passedAmountFrames) {
-            this.pipes.push({ x: canvas.width, y: (-150 * (Math.random() + 1)) });
-        }
-
-        this.pipes.forEach(doublePipe=> {
-            if(this.checkColision(flappyBird, doublePipe)) {
-                colisionCallback();
-                // break;
-            }
-
-            const passedAmountFrames = this.frameRate % 4 === 0;
-            if(this.checkGetPoint(flappyBird, doublePipe) && passedAmountFrames) {
-                pointCallback();
-                // console.log("ponto");
-            }
-
-            doublePipe.x = doublePipe.x -2;
-
-            if(doublePipe.x + this.width <= 0) 
-                this.pipes.shift();
-        });
-    }
+    }    
 }
 
 class Ground extends GameObject {
@@ -167,6 +178,25 @@ class Ground extends GameObject {
     }
 }
 
+class Score {
+    points = 0;
+
+    draw(canvas, context) {
+        context.font = "35px 'VT323'";
+        context.textAlign = "right"
+        context.fillStyle = "white";
+        context.fillText(this.points, canvas.width - 10, 35);
+    }
+
+    update() {
+
+    }
+
+    setPoint(point) {
+        this.points = point;
+    }
+}
+
 class FlappyBird extends GameObject {
     gravity = 0.25;
     velocity = 0;
@@ -178,17 +208,26 @@ class FlappyBird extends GameObject {
         { spriteX: 0, spriteY: 52 }
     ];
 
-    frameRate = 0;
     actualFrame = 0;
-    isFlying = false;
 
     constructor(spriteX, spriteY, width, height, x, y){
         super(spriteX, spriteY, width, height, x, y);
     }
 
-    updateActualFrame () {
+    draw(sprite, context) {
+        const movimentSprite = this.moviments[this.actualFrame];
+        context.drawImage(
+            sprite, 
+            movimentSprite.spriteX, movimentSprite.spriteY, 
+            this.width, this.height, 
+            this.x, this.y, 
+            this.width, this.height, 
+        );
+    }
+
+    update (frameRate) {
         const frameInterval = 10;
-        const canMoviment = this.frameRate % frameInterval === 0;
+        const canMoviment = frameRate % frameInterval === 0;
         if(canMoviment){
             const movimentRate = 1;
             const increment = this.actualFrame + movimentRate;
@@ -199,25 +238,8 @@ class FlappyBird extends GameObject {
     }
 
     applyGravity() {
-        if(!this.isFlying)
-            return;
-
         this.velocity = this.velocity + this.gravity;
         this.y = this.y + this.velocity;
-    }
-
-    draw(sprite, context) {
-        this.frameRate += 1;
-
-        this.updateActualFrame();
-        const movimentSprite = this.moviments[this.isFlying ? this.actualFrame : 0];
-        context.drawImage(
-            sprite, 
-            movimentSprite.spriteX, movimentSprite.spriteY, 
-            this.width, this.height, 
-            this.x, this.y, 
-            this.width, this.height, 
-        );
     }
 
     jump() {
