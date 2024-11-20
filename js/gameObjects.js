@@ -68,8 +68,8 @@ class Pipes extends GameObject {
 
     draw(sprite, context) {
         this.pipes.forEach(doublePipe=> {
-            const spritePipeDistance = 52;
-            const spaceBetween = 90;
+            const spritePipeDistance = 52; // 52
+            const spaceBetween = 120; // 90
             const randomPosition = doublePipe.y;
 
             // bottom pipe
@@ -198,9 +198,9 @@ class Score {
 }
 
 class FlappyBird extends GameObject {
-    gravity = 0.25;
+    gravity = 0.08; // 0.25
     velocity = 0;
-    jumpForce = 4.6;
+    jumpForce = 2.1; // 4.6
 
     moviments = [
         { spriteX: 0, spriteY: 0 },
